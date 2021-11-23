@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Server",
+            "program": "${workspaceFolder}/example/server.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
             "name": "Launch Program",
             "program": "${workspaceFolder}/example/index.js",
             "request": "launch",

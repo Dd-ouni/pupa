@@ -54,8 +54,22 @@ export class CheerioBuild {
 }
 
 export class PuppeteerBuild {
+  private configure = new Map();
+
+  private setConfig(key: unknown, value: unknown) {
+    this.configure.set(key, value);
+    return this;
+  }
+
   build() {
     return new PuppeteerCarwler();
+  }
+
+  setRequest(requestOptions: SetRequestOptionsPupa) {
+    return this.setConfig(
+      'queue',
+      is(Array, requestOptions) ? requestOptions : [requestOptions]
+    );
   }
 }
 
