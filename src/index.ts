@@ -21,7 +21,7 @@ type SetRequestOptionsPupa =
   | RequestOptions
   | RequestOptions[];
 
-class CheerioBuild {
+export class CheerioBuild {
   private configure = new Map();
 
   private setConfig(key: unknown, value: unknown) {
@@ -53,7 +53,7 @@ class CheerioBuild {
   }
 }
 
-class PuppeteerBuild {
+export class PuppeteerBuild {
   build() {
     return new PuppeteerCarwler();
   }

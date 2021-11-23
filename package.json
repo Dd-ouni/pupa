@@ -1,6 +1,6 @@
 {
   "name": "pupa",
-  "version": "0.1.0",
+  "version": "0.1.01",
   "description": "",
   "engines": {
     "node": "v15.14.0"
@@ -13,7 +13,7 @@
   "license": "Apache-2.0",
   "keywords": [],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest ./test",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
@@ -24,9 +24,11 @@
     "posttest": "npm run lint"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.3",
     "@types/node": "^15.14.0",
     "@types/ramda": "^0.27.50",
     "gts": "^3.1.0",
+    "jest": "^27.3.1",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.4"
   },
