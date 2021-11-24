@@ -4,7 +4,7 @@ import {EventEmitter} from 'events';
 import {URL} from 'url';
 import {is} from 'ramda';
 
-type RequestOptionsPupa = string | RequestOptions | URL;
+export type RequestOptionsPupa = string | RequestOptions | URL;
 
 export class Request extends EventEmitter {
   private clientRequest: ClientRequest;

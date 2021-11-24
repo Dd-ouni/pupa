@@ -16,7 +16,7 @@ export class Server {
   private routes;
   private contents;
 
-  static run(port: number):Promise<Server> {
+  static run(port: number): Promise<Server> {
     const server = new Server(port);
     return new Promise(reslove => {
       return server.server.once('listening', () => {
@@ -34,23 +34,39 @@ export class Server {
     this.contents = new Map();
   }
 
-  setContent(path:string, content: string) {
+  setContent(path: string, content: string) {
     this.contents.set(path, content);
   }
 
-  setRedirect(from:string, to:string) {
-    this.routes.set(from, (request:IncomingMessage, response: ServerResponse) => {
-      response.writeHead(302, {location: to});
-      response.end();
-    });
+  setRedirect(from: string, to: string) {
+    this.routes.set(
+      from,
+      (request: IncomingMessage, response: ServerResponse) => {
+        response.writeHead(302, {location: to});
+        response.end();
+      }
+    );
   }
-  
+
   setAuth(path: string, username: string, password: string) {
     this.auths.set(path, {username, password});
   }
 
   setResponseDelay(path: string, delay: number) {
     this.delays.set(path, delay);
+  }
+
+  reset() {
+    this.auths = new Map();
+    this.delays = new Map();
+    this.routes = new Map();
+    this.contents = new Map();
+  }
+
+  stop() {
+    return new Promise(resolve => {
+      return this.server.close(resolve);
+    });
   }
 
   private getRequestUrl(request: IncomingMessage): URL {
@@ -79,12 +95,12 @@ export class Server {
 
     setTimeout(() => {
       const route = this.routes.get(pathname);
-      if(route) {
+      if (route) {
         return route(request, response);
       }
 
       const content = this.contents.get(pathname);
-      if(content) {
+      if (content) {
         response.end(content);
         return;
       }

@@ -71,6 +71,18 @@ export class PuppeteerBuild {
       is(Array, requestOptions) ? requestOptions : [requestOptions]
     );
   }
+
+  setPageOperateBefore(pageOperateBefore: PageOperateBeforeFunction) {
+    return this.setConfig('pageOperateBefore', pageOperateBefore);
+  }
+
+  setPageOperateResponse(pageOperateResponse: PageOperateResponseFunction) {
+    return this.setConfig('pageOperateResponse', pageOperateResponse);
+  }
+
+  setPageOperateData(pageOperateData: PageOperateDataFunction) {
+    return this.setConfig('pageOperateData', pageOperateData);
+  }
 }
 
 function setMode(mode: CrawlerMode): CheerioBuild | PuppeteerBuild | null {

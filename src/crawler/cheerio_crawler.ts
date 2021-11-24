@@ -32,6 +32,8 @@ type CheerioCrawlerOption = {
   pageOperateBefore: PageOperateBeforeFunction;
   pageOperateResponse: PageOperateResponseFunction;
   pageOperateData: PageOperateDataFunction;
+  activeQueue: number;
+  queueEndConventions: ((value: unknown) => void) | null;
 };
 
 const mergeDefault = mergeRight({
@@ -39,6 +41,8 @@ const mergeDefault = mergeRight({
   pageOperateBefore: () => {},
   pageOperateResponse: () => {},
   pageOperateData: () => {},
+  activeQueue: 0,
+  queueEndConventions: null,
 } as CheerioCrawlerOption);
 
 export class CheerioCrawler extends AbstractCrawler {
@@ -49,17 +53,34 @@ export class CheerioCrawler extends AbstractCrawler {
     this.option = mergeDefault(option);
   }
 
+  private finished() {
+    const option = this.option;
+    if (
+      option.activeQueue === 0 &&
+      !option.queue.length &&
+      option.queueEndConventions
+    ) {
+      option.queueEndConventions(true);
+    }
+  }
+
   run() {
     const option = this.option;
-    for (const [index, value] of option.queue.entries()) {
-      console.log(`run index:${index}`);
-      const requestInstantiate = request(value);
+
+    if (option.queue.length) {
+      const queueItem = option.queue.shift();
+      // queueItem!
+      /*
+      non empty judgment the length has been verified in front and the compiler has not been identified
+      */
+      const requestInstantiate = request(queueItem!);
+      option.activeQueue += 1;
       let response: IncomingMessage, body: Buffer;
-      option.pageOperateBefore(value, requestInstantiate);
+      option.pageOperateBefore(queueItem!, requestInstantiate);
       requestInstantiate
         .on('response', res => {
           response = res;
-          option.pageOperateResponse(value, res, requestInstantiate);
+          option.pageOperateResponse(queueItem!, res, requestInstantiate);
         })
         .on('data', chunk => {
           body = Buffer.concat(
@@ -73,12 +94,26 @@ export class CheerioCrawler extends AbstractCrawler {
           option.pageOperateData(
             cheerio.load(body.toString()),
             body,
-            value,
+            queueItem!,
             response,
             requestInstantiate
           );
+
+          option.activeQueue -= 1;
+          this.finished();
         })
         .end();
+      process.nextTick(() => {
+        this.run();
+      });
     }
+
+    return this;
+  }
+
+  end() {
+    return new Promise(resolve => {
+      this.option.queueEndConventions = resolve;
+    });
   }
 }
