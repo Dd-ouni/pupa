@@ -7,12 +7,12 @@ describe('createPupa', () => {
 
   describe('setMode', () => {
     test('calibration method returns the result is CrawlerMode.CHEERIO', () => {
-      const result = createPupa().setMode(CrawlerMode.CHEERIO);
+      const result = createPupa(CrawlerMode.CHEERIO);
       expect(result).toEqual(new CheerioBuild());
     });
 
     test('calibration method returns the result is null', () => {
-      const result = createPupa().setMode(1000);
+      const result = createPupa(1000);
       expect(result).toBeNull();
     });
   });
@@ -29,10 +29,9 @@ describe('createPupa', () => {
     });
     test('check crawling results', done => {
       this.server.setContent('/', `<h1>Hello world!</h1>`);
-      createPupa()
-        .setMode(CrawlerMode.CHEERIO)
+      createPupa(CrawlerMode.CHEERIO)
         .setRequest(localhost)
-        .setPageOperateData(($, chunk) => {
+        .setPageOperateComplete(({$, chunk}) => {
           try {
             expect(chunk.toString()).toBe(`<h1>Hello world!</h1>`);
             done();
@@ -42,7 +41,8 @@ describe('createPupa', () => {
         })
         .build()
         .run()
-        .end()
+        .end();
+        
     });
   });
 });

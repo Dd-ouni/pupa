@@ -1,6 +1,7 @@
-import {AbstractCrawler} from './abstract_crawler';
+import {BasicCrawler} from './basic_crawler';
 
-export class PuppeteerCarwler extends AbstractCrawler {
+export class PuppeteerCarwler extends BasicCrawler {
+  private option: any;
   run() {
     console.log('PuppeteerCarwler run()');
     return this;
@@ -8,7 +9,7 @@ export class PuppeteerCarwler extends AbstractCrawler {
 
   end() {
     return new Promise(resolve => {
-      resolve(true);
+      this.option.queueEndConventions = resolve;
     });
   }
 }

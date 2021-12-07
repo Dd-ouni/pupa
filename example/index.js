@@ -1,12 +1,12 @@
 const {createPupa, CrawlerMode} = require('../build/src/index');
 
-createPupa()
-  .setMode(CrawlerMode.CHEERIO)
+createPupa(CrawlerMode.CHEERIO)
   .setRequest(['https://www.baidu.com', 'https://www.qq.com'])
-  .setPageOperateData(($, chunk) => {
+  .setPageOperateComplete(({ $, chunk }) => {
     console.log('=================');
     console.log(chunk.toString());
     console.log($('link'));
   })
   .build()
   .run();
+

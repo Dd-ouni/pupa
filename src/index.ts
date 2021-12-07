@@ -1,19 +1,14 @@
-import {
-  CheerioCrawler,
-  PageOperateBeforeFunction,
-  PageOperateResponseFunction,
-  PageOperateDataFunction,
-} from './crawler/cheerio_crawler';
+import {CheerioCrawler, CheerioCrawlerOptions} from './crawler/cheerio_crawler';
 import {PuppeteerCarwler} from './crawler/puppeteer_crawler';
 import {RequestOptions} from 'http';
 import {URL} from 'url';
-import {is} from 'ramda';
+import {isArray} from './helper';
 export enum CrawlerMode {
   CHEERIO = 0,
   PUPPETEER = 1,
 }
 
-type SetRequestOptionsPupa =
+type SetRequestOptions =
   | string
   | string[]
   | URL
@@ -21,83 +16,59 @@ type SetRequestOptionsPupa =
   | RequestOptions
   | RequestOptions[];
 
-export class CheerioBuild {
-  private configure = new Map();
-
-  private setConfig(key: unknown, value: unknown) {
+export class BasicBuild {
+  protected configure = new Map();
+  protected setConfig(key: unknown, value: unknown) {
     this.configure.set(key, value);
     return this;
   }
 
-  build() {
+  setRequest(requestOptions: SetRequestOptions) {
+    return this.setConfig(
+      'queue',
+      isArray(requestOptions) ? requestOptions : [requestOptions]
+    );
+  }
+
+  setPageOperateBefore(
+    pageOperateBefore: Pick<CheerioCrawlerOptions, 'pageOperateBefore'>
+  ) {
+    return this.setConfig('pageOperateBefore', pageOperateBefore);
+  }
+
+  setPageOperateResponse(
+    pageOperateResponse: Pick<CheerioCrawlerOptions, 'pageOperateResponse'>
+  ) {
+    return this.setConfig('pageOperateResponse', pageOperateResponse);
+  }
+
+  setPageOperateComplete(
+    pageOperateComplete: Pick<CheerioCrawlerOptions, 'pageOperateComplete'>
+  ) {
+    return this.setConfig('pageOperateComplete', pageOperateComplete);
+  }
+}
+
+export class CheerioBuild extends BasicBuild {
+  build(): CheerioCrawler {
     return new CheerioCrawler(Object.fromEntries(this.configure));
   }
-
-  setRequest(requestOptions: SetRequestOptionsPupa) {
-    return this.setConfig(
-      'queue',
-      is(Array, requestOptions) ? requestOptions : [requestOptions]
-    );
-  }
-
-  setPageOperateBefore(pageOperateBefore: PageOperateBeforeFunction) {
-    return this.setConfig('pageOperateBefore', pageOperateBefore);
-  }
-
-  setPageOperateResponse(pageOperateResponse: PageOperateResponseFunction) {
-    return this.setConfig('pageOperateResponse', pageOperateResponse);
-  }
-
-  setPageOperateData(pageOperateData: PageOperateDataFunction) {
-    return this.setConfig('pageOperateData', pageOperateData);
-  }
 }
 
-export class PuppeteerBuild {
-  private configure = new Map();
-
-  private setConfig(key: unknown, value: unknown) {
-    this.configure.set(key, value);
-    return this;
-  }
-
-  build() {
+export class PuppeteerBuild extends BasicBuild {
+  build(): PuppeteerCarwler {
     return new PuppeteerCarwler();
   }
-
-  setRequest(requestOptions: SetRequestOptionsPupa) {
-    return this.setConfig(
-      'queue',
-      is(Array, requestOptions) ? requestOptions : [requestOptions]
-    );
-  }
-
-  setPageOperateBefore(pageOperateBefore: PageOperateBeforeFunction) {
-    return this.setConfig('pageOperateBefore', pageOperateBefore);
-  }
-
-  setPageOperateResponse(pageOperateResponse: PageOperateResponseFunction) {
-    return this.setConfig('pageOperateResponse', pageOperateResponse);
-  }
-
-  setPageOperateData(pageOperateData: PageOperateDataFunction) {
-    return this.setConfig('pageOperateData', pageOperateData);
-  }
 }
-
-function setMode(mode: CrawlerMode): CheerioBuild | PuppeteerBuild | null {
+export function createPupa(mode: CrawlerMode.CHEERIO): CheerioBuild;
+export function createPupa(mode: CrawlerMode.PUPPETEER): PuppeteerBuild;
+export function createPupa(mode: any) {
   switch (mode) {
     case CrawlerMode.CHEERIO:
       return new CheerioBuild();
     case CrawlerMode.PUPPETEER:
       return new PuppeteerBuild();
     default:
+      return null;
   }
-  return null;
-}
-
-export function createPupa() {
-  return {
-    setMode,
-  };
 }

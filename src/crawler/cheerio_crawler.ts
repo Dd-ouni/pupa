@@ -1,59 +1,50 @@
-import {AbstractCrawler} from './abstract_crawler';
+import {BasicCrawler} from './basic_crawler';
 import {URL} from 'url';
 import {RequestOptions, IncomingMessage} from 'http';
 import request, {Request} from '../request';
 import {mergeRight} from 'ramda';
 import cheerio, {CheerioAPI} from 'cheerio';
+import {isArray} from '../helper';
 
-export interface PageOperateBeforeFunction {
-  (requestOptions: string | URL | RequestOptions, request: Request): void;
+export interface PageOperateParameter {
+  requestOptions: string | URL | RequestOptions;
+  request: Request;
+  response: IncomingMessage;
+  $: CheerioAPI;
+  chunk: Buffer;
 }
 
-export interface PageOperateResponseFunction {
-  (
-    requestOptions: string | URL | RequestOptions,
-    response: IncomingMessage,
-    request: Request
-  ): void;
-}
-
-export interface PageOperateDataFunction {
-  (
-    $: CheerioAPI,
-    chunk: Buffer,
-    requestOptions: string | URL | RequestOptions,
-    response: IncomingMessage,
-    request: Request
-  ): void;
-}
-
-type CheerioCrawlerOption = {
+export interface CheerioCrawlerOptions {
   queue: string[] | URL[] | RequestOptions[];
-  pageOperateBefore: PageOperateBeforeFunction;
-  pageOperateResponse: PageOperateResponseFunction;
-  pageOperateData: PageOperateDataFunction;
+  pageOperateBefore: (
+    options: Pick<PageOperateParameter, 'requestOptions' | 'request'>
+  ) => void;
+  pageOperateResponse: (
+    options: Omit<PageOperateParameter, '$' | 'chunk'>
+  ) => void;
+  pageOperateComplete: (options: PageOperateParameter) => void;
   activeQueue: number;
   queueEndConventions: ((value: unknown) => void) | null;
-};
+}
 
 const mergeDefault = mergeRight({
   queue: [],
   pageOperateBefore: () => {},
   pageOperateResponse: () => {},
-  pageOperateData: () => {},
+  pageOperateComplete: () => {},
   activeQueue: 0,
   queueEndConventions: null,
-} as CheerioCrawlerOption);
+} as CheerioCrawlerOptions);
 
-export class CheerioCrawler extends AbstractCrawler {
-  private option: CheerioCrawlerOption;
+export class CheerioCrawler extends BasicCrawler {
+  private option: CheerioCrawlerOptions;
 
-  constructor(option: CheerioCrawlerOption) {
+  constructor(option: CheerioCrawlerOptions) {
     super();
     this.option = mergeDefault(option);
   }
 
-  private finished() {
+  private finished(): void {
     const option = this.option;
     if (
       option.activeQueue === 0 &&
@@ -64,10 +55,10 @@ export class CheerioCrawler extends AbstractCrawler {
     }
   }
 
-  run() {
+  run(){
     const option = this.option;
 
-    if (option.queue.length) {
+    if (isArray(option.queue) && option.queue.length) {
       const queueItem = option.queue.shift();
       // queueItem!
       /*
@@ -76,11 +67,19 @@ export class CheerioCrawler extends AbstractCrawler {
       const requestInstantiate = request(queueItem!);
       option.activeQueue += 1;
       let response: IncomingMessage, body: Buffer;
-      option.pageOperateBefore(queueItem!, requestInstantiate);
+
+      option.pageOperateBefore({
+        requestOptions: queueItem!,
+        request: requestInstantiate,
+      });
       requestInstantiate
         .on('response', res => {
           response = res;
-          option.pageOperateResponse(queueItem!, res, requestInstantiate);
+          option.pageOperateResponse({
+            requestOptions: queueItem!,
+            request: requestInstantiate,
+            response: response,
+          });
         })
         .on('data', chunk => {
           body = Buffer.concat(
@@ -91,13 +90,13 @@ export class CheerioCrawler extends AbstractCrawler {
           );
         })
         .on('end', () => {
-          option.pageOperateData(
-            cheerio.load(body.toString()),
-            body,
-            queueItem!,
-            response,
-            requestInstantiate
-          );
+          option.pageOperateComplete({
+            requestOptions: queueItem!,
+            request: requestInstantiate,
+            response: response,
+            $: cheerio.load(body.toString()),
+            chunk: body,
+          });
 
           option.activeQueue -= 1;
           this.finished();

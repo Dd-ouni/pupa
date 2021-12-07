@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>29/29</span>
+                <span class='fraction'>30/30</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">77.77% </span>
+                <span class="strong">81.81% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/9</span>
+                <span class='fraction'>9/11</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>29/29</span>
+                <span class='fraction'>30/30</span>
             </div>
         
             
@@ -172,22 +172,16 @@
 <a name='L113'></a><a href='#L113'>113</a>
 <a name='L114'></a><a href='#L114'>114</a>
 <a name='L115'></a><a href='#L115'>115</a>
-<a name='L116'></a><a href='#L116'>116</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -230,6 +224,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -246,11 +244,19 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -287,85 +293,88 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import {AbstractCrawler} from './abstract_crawler';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import {BasicCrawler} from './basic_crawler';
 import {URL} from 'url';
 import {RequestOptions, IncomingMessage} from 'http';
-import request, {Request, RequestOptionsPupa} from '../request';
+import request, {Request} from '../request';
 import {mergeRight} from 'ramda';
 import cheerio, {CheerioAPI} from 'cheerio';
+import {isArray} from '../helper';
 &nbsp;
-export interface PageOperateBeforeFunction {
-  (requestOptions: string | URL | RequestOptions, request: Request): void;
+export interface PageOperateParameter {
+  requestOptions: string | URL | RequestOptions;
+  request: Request;
+  response: IncomingMessage;
+  $: CheerioAPI;
+  chunk: Buffer;
 }
 &nbsp;
-export interface PageOperateResponseFunction {
-  (
-    requestOptions: string | URL | RequestOptions,
-    response: IncomingMessage,
-    request: Request
-  ): void;
-}
-&nbsp;
-export interface PageOperateDataFunction {
-  (
-    $: CheerioAPI,
-    chunk: Buffer,
-    requestOptions: string | URL | RequestOptions,
-    response: IncomingMessage,
-    request: Request
-  ): void;
-}
-&nbsp;
-type CheerioCrawlerOption = {
+export interface CheerioCrawlerOptions {
   queue: string[] | URL[] | RequestOptions[];
-  pageOperateBefore: PageOperateBeforeFunction;
-  pageOperateResponse: PageOperateResponseFunction;
-  pageOperateData: PageOperateDataFunction;
+  pageOperateBefore: (
+    options: Pick&lt;PageOperateParameter, 'requestOptions' | 'request'&gt;
+  ) =&gt; void;
+  pageOperateResponse: (
+    options: Omit&lt;PageOperateParameter, '$' | 'chunk'&gt;
+  ) =&gt; void;
+  pageOperateComplete: (options: PageOperateParameter) =&gt; void;
   activeQueue: number;
   queueEndConventions: ((value: unknown) =&gt; void) | null;
-};
+}
 &nbsp;
 const mergeDefault = mergeRight({
   queue: [],
   pageOperateBefore: () =&gt; {},
   pageOperateResponse: () =&gt; {},
-  pageOperateData: <span class="fstat-no" title="function not covered" >() =</span>&gt; {},
+  pageOperateComplete: <span class="fstat-no" title="function not covered" >() =</span>&gt; {},
   activeQueue: 0,
   queueEndConventions: null,
-} as CheerioCrawlerOption);
+} as CheerioCrawlerOptions);
 &nbsp;
-export class CheerioCrawler extends AbstractCrawler {
-  private option: CheerioCrawlerOption;
+export class CheerioCrawler extends BasicCrawler {
+  private option: CheerioCrawlerOptions;
 &nbsp;
-  constructor(option: CheerioCrawlerOption) {
+  constructor(option: CheerioCrawlerOptions) {
     super();
     this.option = mergeDefault(option);
   }
 &nbsp;
-  private finished() {
+  private finished(): void {
     const option = this.option;
-    if(option.activeQueue === 0 &amp;&amp; !option.queue.length &amp;&amp; option.queueEndConventions){
+    if (
+      option.activeQueue === 0 &amp;&amp;
+      !option.queue.length &amp;&amp;
+      option.queueEndConventions
+    ) {
       option.queueEndConventions(true);
     }
   }
 &nbsp;
-  run():CheerioCrawler {
+  run(){
     const option = this.option;
 &nbsp;
-    if (option.queue.length) {
+    if (isArray(option.queue) &amp;&amp; option.queue.length) {
       const queueItem = option.queue.shift();
-      // queueItem! 
+      // queueItem!
       /*
       non empty judgment the length has been verified in front and the compiler has not been identified
       */
       const requestInstantiate = request(queueItem!);
       option.activeQueue += 1;
       let response: IncomingMessage, body: Buffer;
-      option.pageOperateBefore(queueItem!, requestInstantiate);
+&nbsp;
+      option.pageOperateBefore({
+        requestOptions: queueItem!,
+        request: requestInstantiate,
+      });
       requestInstantiate
         .on('response', res =&gt; {
           response = res;
-          option.pageOperateResponse(queueItem!, res, requestInstantiate);
+          option.pageOperateResponse({
+            requestOptions: queueItem!,
+            request: requestInstantiate,
+            response: response,
+          });
         })
         .on('data', chunk =&gt; {
           body = Buffer.concat(
@@ -376,27 +385,27 @@ export class CheerioCrawler extends AbstractCrawler {
           );
         })
         .on('end', () =&gt; {
-          option.pageOperateData(
-            cheerio.load(body.toString()),
-            body,
-            queueItem!,
-            response,
-            requestInstantiate
-          );
+          option.pageOperateComplete({
+            requestOptions: queueItem!,
+            request: requestInstantiate,
+            response: response,
+            $: cheerio.load(body.toString()),
+            chunk: body,
+          });
 &nbsp;
           option.activeQueue -= 1;
           this.finished();
         })
         .end();
-        process.nextTick(() =&gt; {
-          this.run();
-        });
+      process.nextTick(() =&gt; {
+        this.run();
+      });
     }
 &nbsp;
     return this;
   }
 &nbsp;
-  end(): Promise&lt;unknown&gt; {
+  end() {
     return new Promise(resolve =&gt; {
       this.option.queueEndConventions = resolve;
     });
@@ -409,7 +418,7 @@ export class CheerioCrawler extends AbstractCrawler {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank">istanbul</a>
-                at Wed Nov 24 2021 15:57:43 GMT+0800 (中国标准时间)
+                at Tue Dec 07 2021 22:36:15 GMT+0800 (中国标准时间)
             </div>
         </div>
         <script src="../../prettify.js"></script>
