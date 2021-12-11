@@ -28,12 +28,12 @@ describe('createPupa', () => {
       this.server.stop();
     });
     test('check crawling results', done => {
-      this.server.setContent('/', `<h1>Hello world!</h1>`);
+      this.server.setContent('/', '<h1>Hello world!</h1>');
       createPupa(CrawlerMode.CHEERIO)
         .setRequest(localhost)
         .setPageOperateComplete(({$, chunk}) => {
           try {
-            expect(chunk.toString()).toBe(`<h1>Hello world!</h1>`);
+            expect(chunk.toString()).toBe('<h1>Hello world!</h1>');
             done();
           } catch (error) {
             done(error);
@@ -44,5 +44,27 @@ describe('createPupa', () => {
         .end();
         
     });
+
+    test('check request headers', done => {
+      this.server.setContent('/', (request) => {
+        return request.headers.cookie;
+      })
+      createPupa(CrawlerMode.CHEERIO)
+        .setRequest(localhost)
+        .setHeaders({
+          Cookie: "123",
+        })
+        .setPageOperateComplete(({chunk}) => {
+          try {
+            expect(chunk.toString()).toBe('123');
+            done();
+          } catch (error) {
+            done(error);
+          }
+        })
+        .build()
+        .run()
+        .end();
+    })
   });
 });

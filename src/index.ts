@@ -1,20 +1,12 @@
 import {CheerioCrawler, CheerioCrawlerOptions} from './crawler/cheerio_crawler';
 import {PuppeteerCarwler} from './crawler/puppeteer_crawler';
-import {RequestOptions} from 'http';
+import {RequestOptionsPlusPlus} from './request';
 import {URL} from 'url';
 import {isArray} from './helper';
 export enum CrawlerMode {
   CHEERIO = 0,
   PUPPETEER = 1,
 }
-
-type SetRequestOptions =
-  | string
-  | string[]
-  | URL
-  | URL[]
-  | RequestOptions
-  | RequestOptions[];
 
 export class BasicBuild {
   protected configure = new Map();
@@ -23,11 +15,24 @@ export class BasicBuild {
     return this;
   }
 
-  setRequest(requestOptions: SetRequestOptions) {
+  /**
+   * @param requestOptions string | RequestOptions | URL | string[] | RequestOptions[] | URL[]
+   * @returns this
+   */
+  setRequest(requestOptions: RequestOptionsPlusPlus) {
     return this.setConfig(
       'queue',
       isArray(requestOptions) ? requestOptions : [requestOptions]
     );
+  }
+
+  /**
+   *
+   * @param headers is a key value object which usually requires the following properties Cookie | User-Agent
+   * @returns this
+   */
+  setHeaders(headers: {[key: string]: string}) {
+    return this.setConfig('headers', headers);
   }
 
   setPageOperateBefore(

@@ -4,7 +4,7 @@ import {RequestOptions, IncomingMessage} from 'http';
 import request, {Request} from '../request';
 import {mergeRight} from 'ramda';
 import cheerio, {CheerioAPI} from 'cheerio';
-import {isArray} from '../helper';
+import {isArray, isString, isUrl, urlToHttpOptions} from '../helper';
 
 export interface PageOperateParameter {
   requestOptions: string | URL | RequestOptions;
@@ -16,6 +16,7 @@ export interface PageOperateParameter {
 
 export interface CheerioCrawlerOptions {
   queue: string[] | URL[] | RequestOptions[];
+  headers: { [key:string]: string } | null;
   pageOperateBefore: (
     options: Pick<PageOperateParameter, 'requestOptions' | 'request'>
   ) => void;
@@ -28,6 +29,7 @@ export interface CheerioCrawlerOptions {
 }
 
 const mergeDefault = mergeRight({
+  headers: null,
   queue: [],
   pageOperateBefore: () => {},
   pageOperateResponse: () => {},
@@ -46,6 +48,7 @@ export class CheerioCrawler extends BasicCrawler {
 
   private finished(): void {
     const option = this.option;
+    option.activeQueue -= 1;
     if (
       option.activeQueue === 0 &&
       !option.queue.length &&
@@ -55,29 +58,61 @@ export class CheerioCrawler extends BasicCrawler {
     }
   }
 
-  run(){
-    const option = this.option;
+  private hasQueue() {
+    return Boolean(isArray(this.option.queue) && this.option.queue.length)
+  }
 
-    if (isArray(option.queue) && option.queue.length) {
-      const queueItem = option.queue.shift();
-      // queueItem!
-      /*
+  private getQueueItem() {
+    return this.option.queue.shift();
+  }
+
+  private hasHeaders() {
+    return Boolean(this.option.headers !== null)
+  }
+
+  private getRequest(queueItem: string | URL | RequestOptions):Request {
+    if(this.hasHeaders()){
+      if(isString(queueItem)){
+        queueItem = mergeRight(urlToHttpOptions(new URL(queueItem)), {
+          headers: this.option.headers!
+        });
+      }else if(isUrl(queueItem)) {
+        queueItem = mergeRight(urlToHttpOptions(queueItem), {
+          headers: this.option.headers!
+        });
+      }else{
+        queueItem = mergeRight(queueItem, {
+          headers: this.option.headers!
+        });
+      }
+    }
+
+    const requestInstance = request(queueItem);
+    this.option.activeQueue += 1;
+    return requestInstance;
+  }
+
+  run(){
+    if (this.hasQueue()) {
+      /** queueItem!
       non empty judgment the length has been verified in front and the compiler has not been identified
       */
-      const requestInstantiate = request(queueItem!);
-      option.activeQueue += 1;
+      const queueItem = this.getQueueItem();
+      const option = this.option;
+      const requestInstance = this.getRequest(queueItem!);
       let response: IncomingMessage, body: Buffer;
 
       option.pageOperateBefore({
         requestOptions: queueItem!,
-        request: requestInstantiate,
+        request: requestInstance,
       });
-      requestInstantiate
+
+      requestInstance
         .on('response', res => {
           response = res;
           option.pageOperateResponse({
             requestOptions: queueItem!,
-            request: requestInstantiate,
+            request: requestInstance,
             response: response,
           });
         })
@@ -92,13 +127,11 @@ export class CheerioCrawler extends BasicCrawler {
         .on('end', () => {
           option.pageOperateComplete({
             requestOptions: queueItem!,
-            request: requestInstantiate,
+            request: requestInstance,
             response: response,
             $: cheerio.load(body.toString()),
             chunk: body,
           });
-
-          option.activeQueue -= 1;
           this.finished();
         })
         .end();
@@ -110,6 +143,10 @@ export class CheerioCrawler extends BasicCrawler {
     return this;
   }
 
+  /**
+   * returns an agreement that when the queue is empty and does not have an active
+   * @returns Promise
+   */
   end() {
     return new Promise(resolve => {
       this.option.queueEndConventions = resolve;

@@ -1,6 +1,7 @@
 import {createServer, IncomingMessage, ServerResponse} from 'http';
 import {URL} from 'url';
 import {getType} from 'mime';
+import {isFunction} from '../helper';
 
 type Auth = {
   username: string;
@@ -34,7 +35,8 @@ export class Server {
     this.contents = new Map();
   }
 
-  setContent(path: string, content: string) {
+
+  setContent(path: string, content: string | { (request: IncomingMessage): string }) {
     this.contents.set(path, content);
   }
 
@@ -75,6 +77,7 @@ export class Server {
   }
 
   private onRequest(request: IncomingMessage, response: ServerResponse) {
+
     this.handleError(request, response);
     const {pathname} = this.getRequestUrl(request);
 
@@ -101,7 +104,11 @@ export class Server {
 
       const content = this.contents.get(pathname);
       if (content) {
-        response.end(content);
+        if(isFunction(content)){
+          response.end(content(request));
+        }else{
+          response.end(content);
+        }
         return;
       }
 

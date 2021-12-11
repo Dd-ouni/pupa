@@ -4,8 +4,10 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
+
         {
-            "name": "Launch Server",
+            "name": "Server",
             "program": "${workspaceFolder}/example/server.js",
             "request": "launch",
             "skipFiles": [
@@ -14,7 +16,16 @@
             "type": "pwa-node"
         },
         {
-            "name": "Launch Program",
+            "name": "Test",
+            "program": "${workspaceFolder}/example/test.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "pwa-node"
+        },
+        {
+            "name": "Index",
             "program": "${workspaceFolder}/example/index.js",
             "request": "launch",
             "skipFiles": [
