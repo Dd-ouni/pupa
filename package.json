@@ -1,6 +1,6 @@
 {
   "name": "pupa",
-  "version": "0.1.04",
+  "version": "0.1.05",
   "description": "",
   "engines": {
     "node": "v15.14.0"
@@ -28,6 +28,7 @@
     "@types/mime": "^2.0.3",
     "@types/node": "^15.14.0",
     "@types/ramda": "^0.27.50",
+    "@types/user-agents": "^1.0.2",
     "gts": "^3.1.0",
     "jest": "^27.3.1",
     "ts-node": "^10.4.0",
@@ -36,6 +37,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.10",
     "mime": "^3.0.0",
-    "ramda": "^0.27.1"
+    "ramda": "^0.27.1",
+    "user-agents": "^1.0.862"
   }
 }

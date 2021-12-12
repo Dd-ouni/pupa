@@ -77,7 +77,7 @@ export class Server {
   }
 
   private onRequest(request: IncomingMessage, response: ServerResponse) {
-
+    console.log(JSON.stringify(request.headers, null, 2));
     this.handleError(request, response);
     const {pathname} = this.getRequestUrl(request);
 

@@ -3,6 +3,7 @@ import {PuppeteerCarwler} from './crawler/puppeteer_crawler';
 import {RequestOptionsPlusPlus} from './request';
 import {URL} from 'url';
 import {isArray} from './helper';
+
 export enum CrawlerMode {
   CHEERIO = 0,
   PUPPETEER = 1,
@@ -35,21 +36,25 @@ export class BasicBuild {
     return this.setConfig('headers', headers);
   }
 
-  setPageOperateBefore(
-    pageOperateBefore: Pick<CheerioCrawlerOptions, 'pageOperateBefore'>
-  ) {
+  setUserAgent(userAgent: string) {
+    return this.setConfig('userAgent', userAgent);
+  }
+
+  setPageOperateBefore(pageOperateBefore: {
+    (options: Pick<CheerioCrawlerOptions, 'pageOperateBefore'>): void;
+  }) {
     return this.setConfig('pageOperateBefore', pageOperateBefore);
   }
 
-  setPageOperateResponse(
-    pageOperateResponse: Pick<CheerioCrawlerOptions, 'pageOperateResponse'>
-  ) {
+  setPageOperateResponse(pageOperateResponse: {
+    (options: Pick<CheerioCrawlerOptions, 'pageOperateResponse'>): void;
+  }) {
     return this.setConfig('pageOperateResponse', pageOperateResponse);
   }
 
-  setPageOperateComplete(
-    pageOperateComplete: Pick<CheerioCrawlerOptions, 'pageOperateComplete'>
-  ) {
+  setPageOperateComplete(pageOperateComplete: {
+    (options: Pick<CheerioCrawlerOptions, 'pageOperateComplete'>): void;
+  }) {
     return this.setConfig('pageOperateComplete', pageOperateComplete);
   }
 }

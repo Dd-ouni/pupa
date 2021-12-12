@@ -2,7 +2,6 @@ import {request, RequestOptions, ClientRequest} from 'http';
 import {request as requests} from 'https';
 import {EventEmitter} from 'events';
 import {URL} from 'url';
-import {is} from 'ramda';
 import { isString, isUrl } from '../helper';
 
 export type RequestOptionsPlus = string | RequestOptions | URL;
