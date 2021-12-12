@@ -96,8 +96,7 @@ export class CheerioCrawler extends BasicCrawler {
     if (!(queueItem as RequestOptions).headers!['user-agent']) {
       const userAgent = this.option.userAgent;
       if(isFunction(userAgent)){
-        const cc = userAgent();
-        (queueItem as RequestOptions).headers!['user-agent'] = cc;
+        (queueItem as RequestOptions).headers!['user-agent'] = userAgent();
       }else if(isString(userAgent)){
         (queueItem as RequestOptions).headers!['user-agent'] = userAgent;
       }else{
