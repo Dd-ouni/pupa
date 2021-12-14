@@ -99,3 +99,7 @@ Documents your database design and schemas, relations etc...
 ## Licensing
 
 [Apache-2.0](LICENSE)
+
+## Stats
+
+![Stats](https://repobeats.axiom.co/api/embed/dd80c5551c636f8d0c0165ac39cb3f109dec162f.svg "Repobeats analytics image")
