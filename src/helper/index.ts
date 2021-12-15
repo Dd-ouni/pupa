@@ -6,7 +6,7 @@ import {RequestOptions} from 'http';
  * @param value enter any variable
  * @returns boolean
  */
-export function isArray(value: any): value is [] {
+export function isArray<T>(value: any): value is Array<T> {
   return Boolean(Object.prototype.toString.call(value) === '[object Array]');
 }
 

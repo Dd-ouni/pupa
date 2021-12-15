@@ -1,6 +1,6 @@
 {
   "name": "pupa",
-  "version": "0.1.05",
+  "version": "0.1.06",
   "description": "",
   "engines": {
     "node": "v15.14.0"
@@ -38,6 +38,7 @@
     "cheerio": "^1.0.0-rc.10",
     "mime": "^3.0.0",
     "ramda": "^0.27.1",
+    "redis": "^4.0.1",
     "user-agents": "^1.0.862"
   }
 }

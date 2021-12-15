@@ -1,7 +1,7 @@
 const {createPupa, CrawlerMode, CheerioBuild} = require('../build/src/index');
 const {Server} = require('../build/src/server/index');
 
-const localhost = 'http://127.0.0.1:8000/';
+const localServerHost = 'http://127.0.0.1:8000/';
 
 describe('createPupa', () => {
 
@@ -30,7 +30,7 @@ describe('createPupa', () => {
     test('check crawling results', done => {
       this.server.setContent('/', '<h1>Hello world!</h1>');
       createPupa(CrawlerMode.CHEERIO)
-        .setRequest(localhost)
+        .setRequest(localServerHost)
         .setPageOperateComplete(({$, chunk}) => {
           try {
             expect(chunk.toString()).toBe('<h1>Hello world!</h1>');
@@ -42,7 +42,6 @@ describe('createPupa', () => {
         .build()
         .run()
         .end();
-        
     });
 
     test('check request headers', done => {
@@ -50,7 +49,7 @@ describe('createPupa', () => {
         return request.headers.cookie;
       })
       createPupa(CrawlerMode.CHEERIO)
-        .setRequest(localhost)
+        .setRequest(localServerHost)
         .setHeaders({
           Cookie: "123",
         })
