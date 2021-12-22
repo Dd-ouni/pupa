@@ -20,7 +20,7 @@ export class RedisStorage implements BasicStorage {
     });
   }
 
-  push(key: string, value: object, priority = 1): Promise<number> {
+  push(key: string, value: unknown, priority = 1): Promise<number> {
     if (!this.isReady) {
       return new Promise((resolve) => {
         this.commandQueue.push(() => {
@@ -54,6 +54,7 @@ export class RedisStorage implements BasicStorage {
         });
       })
     }else{
+      
       return this.storage.eval(DEQUEUE_SCRIPT, {
         keys: [key],
         arguments: ['1']
@@ -61,7 +62,7 @@ export class RedisStorage implements BasicStorage {
     }
   }
 
-  set(key: string, value: object): Promise<string | null> {
+  set(key: string, value: unknown): Promise<string | null> {
     if (!this.isReady) {
       return new Promise(resolve => {
         this.commandQueue.push(() => {
@@ -87,5 +88,33 @@ export class RedisStorage implements BasicStorage {
     } else {
       return this.storage.get(key);
     }
+  }
+
+  has(key: string): Promise<boolean> {
+    if(!this.isReady) {
+      return new Promise((resolve) => {
+        this.commandQueue.push(() => {
+          this.storage.EXISTS(key).then(result => {
+            resolve(result)
+          })
+        });
+      });
+    } else {
+      return this.storage.EXISTS(key);
+    }
+  }
+
+  size(key: string): Promise<number> {
+    if(!this.isReady) {
+      return new Promise((resolve) => {
+        this.commandQueue.push(() => {
+          this.storage.zCard(key).then(result => {
+            resolve(result)
+          })
+        });
+      });
+    } else {
+      return this.storage.zCard(key);
+    }    
   }
 }

@@ -1,6 +1,6 @@
 import {URL} from 'url';
 import {RequestOptions} from 'http';
-
+import {PriorityQueueElement} from '../queue/priority_queue';
 /**
  * array type guard
  * @param value enter any variable
@@ -44,6 +44,16 @@ export function isUrl(value: any): value is URL {
  */
 export function isFunction(value: any): value is Function {
   return Boolean(typeof value === 'function')
+}
+
+/**
+ * PriorityQueueElement type guard
+ * @param value enter any variable
+ * @returns boolean
+ */
+
+export function isPriorityQueueElement(value: any): value is PriorityQueueElement {
+  return Boolean(typeof(value) === 'object' && 'priority' in value);
 }
 
 /**

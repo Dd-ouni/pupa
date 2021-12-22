@@ -4,14 +4,14 @@ import {EventEmitter} from 'events';
 import {URL} from 'url';
 import { isString, isUrl } from '../helper';
 
-export type RequestOptionsPlus = string | RequestOptions | URL;
-export type RequestOptionsPlusPlus = string | RequestOptions | URL | string[] | RequestOptions[] | URL[];
+export type RequestOptionsUnion = string | RequestOptions | URL;
+export type RequestArrayOptionsUnion = string[] | RequestOptions[] | URL[];
 
 
 export class Request extends EventEmitter {
   private clientRequest: ClientRequest;
 
-  constructor(option: RequestOptionsPlus) {
+  constructor(option: RequestOptionsUnion) {
     super();
     this.clientRequest = this.getRequest(option)(option, res => {
       this.emit('response', res);
@@ -26,7 +26,7 @@ export class Request extends EventEmitter {
     });
   }
 
-  private getProtocol(option: RequestOptionsPlus): string {
+  private getProtocol(option: RequestOptionsUnion): string {
     if(isString(option)) {
       return new URL(option).protocol;
     }else if(isUrl(option)){
@@ -36,14 +36,14 @@ export class Request extends EventEmitter {
     }
   }
 
-  private getRequest(option: RequestOptionsPlus) {
+  private getRequest(option: RequestOptionsUnion) {
     const protocol = this.getProtocol(option);
     if (protocol === 'https:') {
       return requests;
     } else if (protocol === 'http:') {
       return request;
     } else {
-      throw new RangeError(`not in the range type ${protocol}`);
+      throw new RangeError(`not in the range type \n ${option}`);
     }
   }
 
@@ -60,6 +60,6 @@ export class Request extends EventEmitter {
   }
 }
 
-export default function requestFactory(option: RequestOptionsPlus):Request {
+export default function requestFactory(option: RequestOptionsUnion):Request {
   return new Request(option);
 }

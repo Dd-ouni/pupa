@@ -1,8 +1,13 @@
 import {CheerioCrawler, CheerioCrawlerOptions} from './crawler/cheerio_crawler';
 import {PuppeteerCarwler} from './crawler/puppeteer_crawler';
-import {RequestOptionsPlusPlus} from './request';
+import {RequestOptionsUnion, RequestArrayOptionsUnion} from './request';
 import {URL} from 'url';
 import {isArray} from './helper';
+import {PriorityQueue} from './queue/priority_queue';
+import {RedisStorage} from './storage/redis_storage';
+import {RemStorage} from './storage/ram_storage';
+
+type getPriorityQueueOneType<T> = T extends (n: infer P) => void ? P : never;
 
 export enum CrawlerMode {
   CHEERIO = 0,
@@ -11,23 +16,41 @@ export enum CrawlerMode {
 
 export class BasicBuild {
   protected configure = new Map();
+  protected isDistributed = false;
   protected setConfig(key: unknown, value: unknown) {
     this.configure.set(key, value);
     return this;
   }
 
   /**
-   * @param requestOptions string | RequestOptions | URL | string[] | RequestOptions[] | URL[]
+   * @param requestOptions
    * @returns this
    */
-  setRequest(requestOptions: RequestOptionsPlusPlus) {
-    return this.setConfig(
-      'queue',
-      isArray(requestOptions) ? requestOptions : [requestOptions]
-    );
+  setRequest(
+    requestOptions: getPriorityQueueOneType<
+      typeof PriorityQueue.prototype.push
+    >,
+    priority: number = 1
+  ) {
+    if (!this.configure.has('queue')) {
+      this.setConfig('queue', new PriorityQueue(new RemStorage()));
+    }
+    const priorityQueue: PriorityQueue = this.configure.get('queue');
+    priorityQueue.push(requestOptions);
+
+    return this;
   }
 
-  
+  setDistributedStorage() {
+    if (!this.isDistributed) {
+      if (this.configure.has('queue')) {
+        this.configure.get('queue');
+      } else {
+        this.setConfig('queue', new PriorityQueue(new RedisStorage()));
+      }
+    }
+    return this;
+  }
 
   /**
    *

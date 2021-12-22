@@ -1,14 +1,21 @@
 import {BasicCrawler} from './basic_crawler';
 import {URL} from 'url';
 import {RequestOptions, IncomingMessage} from 'http';
-import request, {Request} from '../request';
+import request, {Request, RequestOptionsUnion} from '../request';
 import {mergeRight, mergeDeepRight, concat} from 'ramda';
 import cheerio, {CheerioAPI} from 'cheerio';
-import {isArray, isFunction, isString, isUrl, urlToHttpOptions} from '../helper';
+import {
+  isArray,
+  isFunction,
+  isString,
+  isUrl,
+  urlToHttpOptions,
+} from '../helper';
 import UserAgent from 'user-agents';
+import {PriorityQueue} from '../queue/priority_queue';
 
 export interface PageOperateParameter {
-  requestOptions: string | URL | RequestOptions;
+  requestOptions: RequestOptionsUnion;
   request: Request;
   response: IncomingMessage;
   $: CheerioAPI;
@@ -16,9 +23,9 @@ export interface PageOperateParameter {
 }
 
 export interface CheerioCrawlerOptions {
-  userAgent: string | { () : string };
+  userAgent: string | {(): string};
   headers: {[key: string]: string} | null;
-  queue: string[] | URL[] | RequestOptions[];
+  queue: PriorityQueue;
   pageOperateBefore: (
     options: Pick<PageOperateParameter, 'requestOptions' | 'request'>
   ) => void;
@@ -28,6 +35,8 @@ export interface CheerioCrawlerOptions {
   pageOperateComplete: (options: PageOperateParameter) => void;
   activeQueue: number;
   queueEndConventions: ((value: unknown) => void) | null;
+  firstDelay: number;
+  firstTime: number | null;
 }
 
 const mergeDefault = mergeDeepRight({
@@ -35,12 +44,14 @@ const mergeDefault = mergeDeepRight({
     return new UserAgent().toString();
   },
   headers: null,
-  queue: [],
+  queue: null,
   pageOperateBefore: () => {},
   pageOperateResponse: () => {},
   pageOperateComplete: () => {},
   activeQueue: 0,
   queueEndConventions: null,
+  firstDelay: 5000,
+  firstTime: null,
 });
 
 export class CheerioCrawler extends BasicCrawler {
@@ -51,12 +62,12 @@ export class CheerioCrawler extends BasicCrawler {
     this.option = mergeDefault(option) as CheerioCrawlerOptions;
   }
 
-  private finished(): void {
+  private async finished() {
     const option = this.option;
     option.activeQueue -= 1;
     if (
       option.activeQueue === 0 &&
-      !option.queue.length &&
+      !(await option.queue.size()) &&
       option.queueEndConventions
     ) {
       option.queueEndConventions(true);
@@ -64,21 +75,20 @@ export class CheerioCrawler extends BasicCrawler {
   }
 
   private hasQueue() {
-    return Boolean(isArray(this.option.queue) && this.option.queue.length);
+    return this.option.queue.size();
   }
 
   private getQueueItem() {
-    return this.option.queue.shift();
+    return this.option.queue.pop();
   }
 
   private hasHeaders() {
     return Boolean(this.option.headers !== null);
   }
 
-  private getRequest(queueItem: string | URL | RequestOptions): Request {
+  private getRequest(queueItem: RequestOptionsUnion): Request {
     if (this.hasHeaders()) {
       if (isString(queueItem)) {
-        console.log(JSON.stringify(this.option.headers, null, 2));
         queueItem = mergeRight(urlToHttpOptions(new URL(queueItem)), {
           headers: JSON.parse(JSON.stringify(this.option.headers)),
         });
@@ -95,11 +105,11 @@ export class CheerioCrawler extends BasicCrawler {
 
     if (!(queueItem as RequestOptions).headers!['user-agent']) {
       const userAgent = this.option.userAgent;
-      if(isFunction(userAgent)){
+      if (isFunction(userAgent)) {
         (queueItem as RequestOptions).headers!['user-agent'] = userAgent();
-      }else if(isString(userAgent)){
+      } else if (isString(userAgent)) {
         (queueItem as RequestOptions).headers!['user-agent'] = userAgent;
-      }else{
+      } else {
         throw new Error('userAgent out of range');
       }
     }
@@ -109,14 +119,32 @@ export class CheerioCrawler extends BasicCrawler {
     return requestInstance;
   }
 
-  run() {
-    if (this.hasQueue()) {
+  private firstDelayRecord(): void {
+    if(!this.option.firstTime) {
+      this.option.firstTime = new Date().getTime();
+    }
+  }
+
+  private isFirstDelayTimeOut(): boolean {
+    if(((new Date().getTime()) - this.option.firstTime!) >= this.option.firstDelay){
+      return true;
+    }else {
+      return false;
+    }
+  }
+
+  async run() {
+    // record the first runtime
+    this.firstDelayRecord();
+
+    if (await this.hasQueue()) {
       /** queueItem!
       non empty judgment the length has been verified in front and the compiler has not been identified
       */
-      const queueItem = this.getQueueItem();
+      const queueItem = (await this.getQueueItem()) as RequestOptionsUnion;
+      console.log(`queueItem ${queueItem}`);
       const option = this.option;
-      const requestInstance = this.getRequest(queueItem!);
+      const requestInstance = this.getRequest(queueItem);
       let response: IncomingMessage, body: Buffer;
 
       option.pageOperateBefore({
@@ -155,6 +183,12 @@ export class CheerioCrawler extends BasicCrawler {
       process.nextTick(() => {
         this.run();
       });
+    } else {
+      if(!this.isFirstDelayTimeOut()) {
+        setTimeout(() => {
+          this.run();
+        }, 100);
+      }
     }
 
     return this;

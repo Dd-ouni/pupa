@@ -1,21 +1,21 @@
 import { BasicStorage } from "./basic_storage";
 import { isArray } from "../helper";
 
-type QueueType = { [key: number]: string[] };
+type QueueType = { [key: number]: unknown[] };
 type StorageValType = QueueType | unknown;
 
 export class RemStorage implements BasicStorage {
   private storage = new Map<string, StorageValType>();
+  private queueSize = 0;
 
-  push(key: string, value: object, priority = 1): Promise<number> {
+  push(key: string, value: unknown, priority = 1): Promise<number> {
     const queue:QueueType = (this.storage.get(key) || {}) as QueueType;
-    let queueElement: string[] = queue[priority];
-    if(isArray(queueElement)) {
-      queueElement.push(JSON.stringify(value))
-    }else{
-      queueElement = [];
+    if(!isArray(queue[priority])) {
+      queue[priority] = [];
     }
+    queue[priority].push(value);
     this.storage.set(key, queue);
+    this.queueSize += 1;
     return new Promise(() => {})
   }
 
@@ -30,12 +30,13 @@ export class RemStorage implements BasicStorage {
       break;
     }
     this.storage.set(key, queue);
+    this.queueSize -= 1;
     return new Promise((resolve) => {
-      resolve(result!);
+      resolve(result);
     });
   }
 
-  set(key: string, value: object): Promise<string | null> {
+  set(key: string, value: unknown): Promise<string | null> {
     this.storage.set(key, value);
     return new Promise(() => {});
   }
@@ -44,5 +45,17 @@ export class RemStorage implements BasicStorage {
     return new Promise((resolve) => {
       resolve(this.storage.get(key) as string);
     });
+  }
+
+  has(key: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      resolve(this.storage.has(key));
+    });
+  }
+
+  size(key: string): Promise<number> {
+    return new Promise((resolve) => {
+      resolve(this.queueSize);
+    })  
   }
 }
