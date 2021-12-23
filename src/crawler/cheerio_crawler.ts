@@ -37,6 +37,7 @@ export interface CheerioCrawlerOptions {
   queueEndConventions: ((value: unknown) => void) | null;
   firstDelay: number;
   firstTime: number | null;
+  isEnd: boolean
 }
 
 const mergeDefault = mergeDeepRight({
@@ -52,6 +53,7 @@ const mergeDefault = mergeDeepRight({
   queueEndConventions: null,
   firstDelay: 5000,
   firstTime: null,
+  isEnd: false
 });
 
 export class CheerioCrawler extends BasicCrawler {
@@ -65,12 +67,14 @@ export class CheerioCrawler extends BasicCrawler {
   private async finished() {
     const option = this.option;
     option.activeQueue -= 1;
-    if (
-      option.activeQueue === 0 &&
-      !(await option.queue.size()) &&
-      option.queueEndConventions
-    ) {
-      option.queueEndConventions(true);
+    if (option.activeQueue === 0 && !(await option.queue.size())) {
+      option.queue.quit().then(() => {
+        if (option.queueEndConventions) {
+          option.queueEndConventions(true);
+        }
+        option.isEnd = true;
+      });
+      
     }
   }
 
@@ -120,20 +124,27 @@ export class CheerioCrawler extends BasicCrawler {
   }
 
   private firstDelayRecord(): void {
-    if(!this.option.firstTime) {
+    if (!this.option.firstTime) {
       this.option.firstTime = new Date().getTime();
     }
   }
 
   private isFirstDelayTimeOut(): boolean {
-    if(((new Date().getTime()) - this.option.firstTime!) >= this.option.firstDelay){
+    if (
+      new Date().getTime() - this.option.firstTime! >=
+      this.option.firstDelay
+    ) {
       return true;
-    }else {
+    } else {
       return false;
     }
   }
 
-  async run() {
+  private async run_() {
+    if(this.option.isEnd) {
+      return;
+    }
+
     // record the first runtime
     this.firstDelayRecord();
 
@@ -169,7 +180,7 @@ export class CheerioCrawler extends BasicCrawler {
               : (chunk as Buffer).length
           );
         })
-        .on('end', () => {
+        .on('end', async () => {
           option.pageOperateComplete({
             requestOptions: queueItem!,
             request: requestInstance,
@@ -181,16 +192,19 @@ export class CheerioCrawler extends BasicCrawler {
         })
         .end();
       process.nextTick(() => {
-        this.run();
+        this.run_();
       });
     } else {
-      if(!this.isFirstDelayTimeOut()) {
+      if (!this.isFirstDelayTimeOut()) {
         setTimeout(() => {
-          this.run();
+          this.run_();
         }, 100);
       }
     }
+  }
 
+  run() {
+    this.run_();
     return this;
   }
 

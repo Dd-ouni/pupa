@@ -39,7 +39,6 @@ describe('createPupa', () => {
             done(error);
           }
         })
-        .build()
         .run()
         .end();
     });
@@ -61,7 +60,6 @@ describe('createPupa', () => {
             done(error);
           }
         })
-        .build()
         .run()
         .end();
     })

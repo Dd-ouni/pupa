@@ -1,6 +1,7 @@
 import {BasicStorage} from './basic_storage';
-import {isArray} from '../helper';
+import {isString} from '../helper';
 import {createClient} from 'redis';
+import { resolve } from 'path/posix';
 const DEQUEUE_SCRIPT = `
   local queue = redis.call('ZREVRANGE', KEYS[1], 0, 0)[1]\n
   if (queue) then\n
@@ -10,55 +11,88 @@ const DEQUEUE_SCRIPT = `
 `;
 export class RedisStorage implements BasicStorage {
   private storage: ReturnType<typeof createClient>;
-  private isReady: Boolean = false;
+  private isReady: boolean = false;
   private commandQueue: {(): void}[] = [];
+  private isEnd: boolean = false;
 
   constructor() {
     this.storage = createClient();
     this.storage.on('ready', () => {
       this.isReady = true;
+      this.storage.del('https://www.baidu.com/');
+      this.runCommandQueue();
     });
+    this.storage.on('error', result => {
+      console.log(`error: ${JSON.stringify(result, null, 2)}`);
+    });
+    this.storage.on('end', () => {
+      this.isEnd = true;
+    });
+    this.storage.connect();
+  }
+
+  private runCommandQueue() {
+    while (1) {
+      if (!this.commandQueue.length) {
+        break;
+      }
+      this.commandQueue.shift()!();
+    }
   }
 
   push(key: string, value: unknown, priority = 1): Promise<number> {
     if (!this.isReady) {
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         this.commandQueue.push(() => {
-          this.storage.zAdd(key, {
-            score: priority,
-            value: JSON.stringify(value),
-          }).then(result => {
-            resolve(result);
-          })
-        })
-      })
+          this.storage
+            .zAdd(key, {
+              score: priority,
+              value: JSON.stringify(value),
+            })
+            .then(result => {
+              resolve(result);
+            });
+        });
+      });
     } else {
       return this.storage.zAdd(key, {
         score: priority,
         value: JSON.stringify(value),
       });
     }
-  
   }
 
   pop(key: string): Promise<unknown> {
-    if(!this.isReady) {
-      return new Promise((resolve) => {
+    if (!this.isReady) {
+      return new Promise(resolve => {
         this.commandQueue.push(() => {
-          this.storage.eval(DEQUEUE_SCRIPT, {
-            keys: [key],
-            arguments: ['1']
-          }).then(result =>{
-            resolve(result);
-          })
+          this.storage
+            .eval(DEQUEUE_SCRIPT, {
+              keys: [key],
+              arguments: ['1'],
+            })
+            .then(result => {
+              if (isString(result)) {
+                resolve(JSON.parse(result));
+              } else {
+                resolve(false);
+              }
+            });
         });
-      })
-    }else{
-      
-      return this.storage.eval(DEQUEUE_SCRIPT, {
-        keys: [key],
-        arguments: ['1']
-      })
+      });
+    } else {
+      return new Promise((resolve) => {
+        this.storage.eval(DEQUEUE_SCRIPT, {
+          keys: [key],
+          arguments: ['1'],
+        }).then(result => {
+          if (isString(result)) {
+            resolve(JSON.parse(result));
+          } else {
+            resolve(false);
+          }
+        });
+      });
     }
   }
 
@@ -91,12 +125,12 @@ export class RedisStorage implements BasicStorage {
   }
 
   has(key: string): Promise<boolean> {
-    if(!this.isReady) {
-      return new Promise((resolve) => {
+    if (!this.isReady) {
+      return new Promise(resolve => {
         this.commandQueue.push(() => {
           this.storage.EXISTS(key).then(result => {
-            resolve(result)
-          })
+            resolve(result);
+          });
         });
       });
     } else {
@@ -105,16 +139,25 @@ export class RedisStorage implements BasicStorage {
   }
 
   size(key: string): Promise<number> {
-    if(!this.isReady) {
+    if(this.isEnd) {
       return new Promise((resolve) => {
+        resolve(0);
+      })
+    }
+    if (!this.isReady) {
+      return new Promise(resolve => {
         this.commandQueue.push(() => {
           this.storage.zCard(key).then(result => {
-            resolve(result)
-          })
+            resolve(result);
+          });
         });
       });
     } else {
       return this.storage.zCard(key);
-    }    
+    }
+  }
+
+  quit(): Promise<void>{
+    return this.storage.quit()
   }
 }

@@ -12,19 +12,18 @@ const {createPupa, CrawlerMode} = require('../build/src/index');
 // console.log(new UserAgent().toString(), " ==1 ");
 // console.log(new UserAgent().toString(), " ==2 ");
 // console.log(JSON.stringify(userAgent.data, null, 2))
-
+// 'http://localhost:8000/', 
 createPupa(CrawlerMode.CHEERIO)
-  .setRequest(['http://localhost:8000/', 'http://localhost:8000/'])
+  .setDistributedStorage()
+  .setRequest(['https://www.baidu.com/'])
   .setHeaders({
     'cookie': '123',
-    'host': 'www.baidu.com'
   })
   .setPageOperateComplete(({ $, chunk }) => {
     console.log('=================');
     console.log(chunk.toString());
     console.log($('link'));
   })
-  .build()
   .run();
 
 

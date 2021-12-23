@@ -58,4 +58,8 @@ export class RemStorage implements BasicStorage {
       resolve(this.queueSize);
     })  
   }
+
+  quit(): Promise<void>{
+    return new Promise((resolve) => {})
+  }
 }

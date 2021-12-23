@@ -7,6 +7,5 @@ createPupa(CrawlerMode.CHEERIO)
     console.log(chunk.toString());
     console.log($('link'));
   })
-  .build()
   .run();
 

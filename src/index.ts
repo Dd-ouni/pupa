@@ -43,17 +43,13 @@ export class BasicBuild {
 
   setDistributedStorage() {
     if (!this.isDistributed) {
-      if (this.configure.has('queue')) {
-        this.configure.get('queue');
-      } else {
-        this.setConfig('queue', new PriorityQueue(new RedisStorage()));
-      }
+      this.isDistributed = true;
+      this.setConfig('queue', new PriorityQueue(new RedisStorage()));
     }
     return this;
   }
 
   /**
-   *
    * @param headers is a key value object which usually requires the following properties Cookie | User-Agent
    * @returns this
    */
@@ -85,14 +81,14 @@ export class BasicBuild {
 }
 
 export class CheerioBuild extends BasicBuild {
-  build(): CheerioCrawler {
-    return new CheerioCrawler(Object.fromEntries(this.configure));
+  run(): CheerioCrawler {
+    return new CheerioCrawler(Object.fromEntries(this.configure)).run();
   }
 }
 
 export class PuppeteerBuild extends BasicBuild {
-  build(): PuppeteerCarwler {
-    return new PuppeteerCarwler();
+  run(): PuppeteerCarwler {
+    return new PuppeteerCarwler().run();
   }
 }
 export function createPupa(mode: CrawlerMode.CHEERIO): CheerioBuild;

@@ -1,7 +1,6 @@
 import {BasicStorage} from '../storage/basic_storage';
 import {RequestOptionsUnion, RequestArrayOptionsUnion} from '../request';
 import {isArray, isPriorityQueueElement, isString, isUrl} from '../helper';
-import {timeStamp} from 'console';
 
 export interface PriorityQueueElement {
   priority: number;
@@ -62,5 +61,9 @@ export class PriorityQueue {
 
   size() {
     return this.storage.size(this.queueKey);
+  }
+
+  quit() {
+    return this.storage.quit();
   }
 }

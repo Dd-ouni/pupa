@@ -5,4 +5,5 @@ export interface BasicStorage{
   get: (key: string) => Promise<string | null>;
   has: (key: string) => Promise<boolean>;
   size: (key: string) => Promise<number>;
+  quit: () => Promise<void>;
 }
