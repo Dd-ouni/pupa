@@ -35,9 +35,10 @@ export interface CheerioCrawlerOptions {
   pageOperateComplete: (options: PageOperateParameter) => void;
   activeQueue: number;
   queueEndConventions: ((value: unknown) => void) | null;
+  storageExpired: number | null;
   firstDelay: number;
   firstTime: number | null;
-  isEnd: boolean
+  isEnd: boolean;
 }
 
 const mergeDefault = mergeDeepRight({
@@ -51,9 +52,10 @@ const mergeDefault = mergeDeepRight({
   pageOperateComplete: () => {},
   activeQueue: 0,
   queueEndConventions: null,
+  storageExpired: null,
   firstDelay: 5000,
   firstTime: null,
-  isEnd: false
+  isEnd: false,
 });
 
 export class CheerioCrawler extends BasicCrawler {
@@ -74,7 +76,6 @@ export class CheerioCrawler extends BasicCrawler {
         }
         option.isEnd = true;
       });
-      
     }
   }
 
@@ -141,7 +142,7 @@ export class CheerioCrawler extends BasicCrawler {
   }
 
   private async run_() {
-    if(this.option.isEnd) {
+    if (this.option.isEnd) {
       return;
     }
 
@@ -153,7 +154,6 @@ export class CheerioCrawler extends BasicCrawler {
       non empty judgment the length has been verified in front and the compiler has not been identified
       */
       const queueItem = (await this.getQueueItem()) as RequestOptionsUnion;
-      console.log(`queueItem ${queueItem}`);
       const option = this.option;
       const requestInstance = this.getRequest(queueItem);
       let response: IncomingMessage, body: Buffer;

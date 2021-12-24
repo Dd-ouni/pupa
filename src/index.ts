@@ -1,8 +1,5 @@
 import {CheerioCrawler, CheerioCrawlerOptions} from './crawler/cheerio_crawler';
 import {PuppeteerCarwler} from './crawler/puppeteer_crawler';
-import {RequestOptionsUnion, RequestArrayOptionsUnion} from './request';
-import {URL} from 'url';
-import {isArray} from './helper';
 import {PriorityQueue} from './queue/priority_queue';
 import {RedisStorage} from './storage/redis_storage';
 import {RemStorage} from './storage/ram_storage';
@@ -33,7 +30,16 @@ export class BasicBuild {
     priority: number = 1
   ) {
     if (!this.configure.has('queue')) {
-      this.setConfig('queue', new PriorityQueue(new RemStorage()));
+      if (this.configure.has('storageExpired')) {
+        this.setConfig(
+          'queue',
+          new PriorityQueue(
+            new RemStorage(this.configure.get('storageExpired'))
+          )
+        );
+      } else {
+        this.setConfig('queue', new PriorityQueue(new RemStorage()));
+      }
     }
     const priorityQueue: PriorityQueue = this.configure.get('queue');
     priorityQueue.push(requestOptions);
@@ -41,10 +47,23 @@ export class BasicBuild {
     return this;
   }
 
+  setStorageExpired(timestamp: number) {
+    return this.setConfig('storageExpired', timestamp);
+  }
+
   setDistributedStorage() {
     if (!this.isDistributed) {
       this.isDistributed = true;
-      this.setConfig('queue', new PriorityQueue(new RedisStorage()));
+      if (this.configure.has('storageExpired')) {
+        this.setConfig(
+          'queue',
+          new PriorityQueue(
+            new RedisStorage(this.configure.get('storageExpired'))
+          )
+        );
+      } else {
+        this.setConfig('queue', new PriorityQueue(new RedisStorage()));
+      }
     }
     return this;
   }

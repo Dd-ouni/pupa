@@ -1,7 +1,6 @@
 import {BasicStorage} from './basic_storage';
 import {isString} from '../helper';
 import {createClient} from 'redis';
-import { resolve } from 'path/posix';
 const DEQUEUE_SCRIPT = `
   local queue = redis.call('ZREVRANGE', KEYS[1], 0, 0)[1]\n
   if (queue) then\n
@@ -15,11 +14,10 @@ export class RedisStorage implements BasicStorage {
   private commandQueue: {(): void}[] = [];
   private isEnd: boolean = false;
 
-  constructor() {
+  constructor(private expired: number | null = null) {
     this.storage = createClient();
     this.storage.on('ready', () => {
       this.isReady = true;
-      this.storage.del('https://www.baidu.com/');
       this.runCommandQueue();
     });
     this.storage.on('error', result => {
@@ -81,17 +79,19 @@ export class RedisStorage implements BasicStorage {
         });
       });
     } else {
-      return new Promise((resolve) => {
-        this.storage.eval(DEQUEUE_SCRIPT, {
-          keys: [key],
-          arguments: ['1'],
-        }).then(result => {
-          if (isString(result)) {
-            resolve(JSON.parse(result));
-          } else {
-            resolve(false);
-          }
-        });
+      return new Promise(resolve => {
+        this.storage
+          .eval(DEQUEUE_SCRIPT, {
+            keys: [key],
+            arguments: ['1'],
+          })
+          .then(result => {
+            if (isString(result)) {
+              resolve(JSON.parse(result));
+            } else {
+              resolve(false);
+            }
+          });
       });
     }
   }
@@ -128,21 +128,68 @@ export class RedisStorage implements BasicStorage {
     if (!this.isReady) {
       return new Promise(resolve => {
         this.commandQueue.push(() => {
-          this.storage.EXISTS(key).then(result => {
-            resolve(result);
+          this.storage.get(key).then(result => {
+            if (this.expired !== null) {
+              if (result !== null) {
+                const timestamp = JSON.parse(result);
+                if (new Date().getTime() - timestamp > this.expired) {
+                  resolve(false);
+                } else {
+                  resolve(true);
+                }
+              }else {
+                resolve(false);
+              }
+            } else {
+              if (result !== null) {
+                resolve(true);
+              } else {
+                resolve(false);
+              }
+            }
           });
         });
       });
     } else {
-      return this.storage.EXISTS(key);
+      return new Promise(resolve => {
+        this.storage.get(key).then(result => {
+          if (this.expired !== null) {
+            if (result !== null) {
+              const timestamp = JSON.parse(result);
+              if (new Date().getTime() - timestamp > this.expired) {
+                resolve(false);
+              } else {
+                resolve(true);
+              }
+            }
+          } else {
+            if (result !== null) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          }
+        });
+      });
     }
+    // if (!this.isReady) {
+    //   return new Promise(resolve => {
+    //     this.commandQueue.push(() => {
+    //       this.storage.EXISTS(key).then(result => {
+    //         resolve(result);
+    //       });
+    //     });
+    //   });
+    // } else {
+    //   return this.storage.EXISTS(key);
+    // }
   }
 
   size(key: string): Promise<number> {
-    if(this.isEnd) {
-      return new Promise((resolve) => {
+    if (this.isEnd) {
+      return new Promise(resolve => {
         resolve(0);
-      })
+      });
     }
     if (!this.isReady) {
       return new Promise(resolve => {
@@ -157,7 +204,7 @@ export class RedisStorage implements BasicStorage {
     }
   }
 
-  quit(): Promise<void>{
-    return this.storage.quit()
+  quit(): Promise<void> {
+    return this.storage.quit();
   }
 }

@@ -8,6 +8,9 @@ export class RemStorage implements BasicStorage {
   private storage = new Map<string, StorageValType>();
   private queueSize = 0;
 
+  constructor(private expired: number | null = null) {
+  }
+
   push(key: string, value: unknown, priority = 1): Promise<number> {
     const queue:QueueType = (this.storage.get(key) || {}) as QueueType;
     if(!isArray(queue[priority])) {
@@ -49,7 +52,24 @@ export class RemStorage implements BasicStorage {
 
   has(key: string): Promise<boolean> {
     return new Promise((resolve) => {
-      resolve(this.storage.has(key));
+      if (this.expired !== null) {
+        const timestamp = this.storage.get(key) as number;
+        if (timestamp !== undefined) {
+          if (new Date().getTime() - timestamp > this.expired) {
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        }else{
+          resolve(false);
+        }
+      } else {
+        if (this.storage.get(key) !== null) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      }
     });
   }
 

@@ -20,8 +20,8 @@ export class PriorityQueue {
     if (isPriorityQueueElement(value)) {
       this.conditionalPush(value.value, value.priority);
     } else if (isString(value)) {
-      if (!(await this.storage.has(value))) {
-        this.storage.set(value, 1);
+      if (!await this.storage.has(value)) {
+        this.storage.set(value, new Date().getTime());
         this.storage.push(this.queueKey, value, priority);
       }
     } else if (isUrl(value)) {
