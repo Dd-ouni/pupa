@@ -115,7 +115,7 @@ export class CheerioCrawler extends BasicCrawler {
       } else if (isString(userAgent)) {
         (queueItem as RequestOptions).headers!['user-agent'] = userAgent;
       } else {
-        throw new Error('userAgent out of range');
+        throw new Error(`userAgent out of range ${JSON.stringify(userAgent, null, 2)}`);
       }
     }
 

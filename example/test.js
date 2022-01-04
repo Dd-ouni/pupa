@@ -12,9 +12,11 @@ const {createPupa, CrawlerMode} = require('../build/src/index');
 // console.log(new UserAgent().toString(), " ==2 ");
 // console.log(JSON.stringify(userAgent.data, null, 2))
 // 'http://localhost:8000/',
+
+
 createPupa(CrawlerMode.CHEERIO)
   .setStorageExpired(1000)
-  // .setDistributedStorage()
+  .setDistributedStorage()
   .setRequest([
     {
       priority: 100,

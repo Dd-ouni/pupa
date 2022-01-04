@@ -172,17 +172,6 @@ export class RedisStorage implements BasicStorage {
         });
       });
     }
-    // if (!this.isReady) {
-    //   return new Promise(resolve => {
-    //     this.commandQueue.push(() => {
-    //       this.storage.EXISTS(key).then(result => {
-    //         resolve(result);
-    //       });
-    //     });
-    //   });
-    // } else {
-    //   return this.storage.EXISTS(key);
-    // }
   }
 
   size(key: string): Promise<number> {
